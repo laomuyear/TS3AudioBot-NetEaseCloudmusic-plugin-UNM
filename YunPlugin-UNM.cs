@@ -310,7 +310,7 @@ public class YunPlugin : IBotPlugin
             MusicCheck musicCheckJson = JsonSerializer.Deserialize<MusicCheck>(searchMusicCheckJson);
 
             // 根据音乐检查结果获取音乐播放URL
-            string musicUrl = musicCheckJson.success.ToString() == "False" ? await GetcheckMusicUrl(musicId, true) : await GetMusicUrl(musicId, true);
+            string musicUrl = musicCheckJson.success.ToString() == "False" ? await GetcheckMusicUrl(musicId, true) : await GetcheckMusicUrl(musicId, true);
 
             // 构造获取音乐详情的URL
             string musicDetailUrl = $"{WangYiYunAPI_Address}/song/detail?ids={musicId}";
