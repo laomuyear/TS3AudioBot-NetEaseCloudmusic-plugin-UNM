@@ -16,8 +16,8 @@ RUN apk add \
 # download and install the TS3AudioBot in the specified version and flavour
 RUN mkdir -p /app \
     && cd /app \
-    && echo "downloading https://splamy.de/api/nightly/projects/ts3ab/${TS3_AUDIOBOT_FLAVOUR}/download -O TS3AudioBot.zip" \
-    && wget https://splamy.de/api/nightly/projects/ts3ab/${TS3_AUDIOBOT_FLAVOUR}/download -O TS3AudioBot.zip \
+    && echo "downloading https://splamy.de/api/nightly/projects/ts3ab/${TS3_AUDIOBOT_RELEASE}/download -O TS3AudioBot.zip" \
+    && wget https://splamy.de/api/nightly/projects/ts3ab/${TS3_AUDIOBOT_RELEASE}/download -O TS3AudioBot.zip \
     && unzip TS3AudioBot.zip \
     && rm TS3AudioBot.zip
 
