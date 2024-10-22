@@ -17,8 +17,7 @@ TS3AudioBot-NetEaseCloudmusic-UnblockNeteaseMusic-plugin
 
 ## 目前的指令：
 正在播放的歌曲的图片和名称可以点机器人看它的头像和描述  
-vip音乐想要先登陆才能播放完整版本:（输入指令后扫描机器人头像二维码登陆）
-`!yun login`  
+相较于原版，可替换vip音乐音源，可能有增加一点点自用功能
 
 双击机器人，目前有以下指令
 1.播放网易云音乐歌曲  
