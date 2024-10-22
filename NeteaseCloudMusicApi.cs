@@ -1163,7 +1163,7 @@ namespace NeteaseCloudMusicApi
     public class Playlist
     {
 
-        public long id;
+        public long id { get; set; }
 
         public string name { get; set; }
 
@@ -1387,7 +1387,7 @@ namespace NeteaseCloudMusicApi
 
         public int id;
 
-        public string name;
+        public string name { get; set; }
 
         public List<string> tns;
 
@@ -1399,7 +1399,7 @@ namespace NeteaseCloudMusicApi
 
         public int id;
 
-        public string name;
+        public string name { get; set; }
 
         public string picUrl { get; set; }
 
@@ -1471,13 +1471,15 @@ namespace NeteaseCloudMusicApi
 
         public string name { get; set; }
 
-        public long id;
+        public long id { get; set; }
 
         public int pst;
 
         public int t;
 
-        public List<ArItem1> ar;
+        public List<ArItem1> ar { get; set; }
+
+        public List<PrivilegesItem1> PrivilegesItem1 { get; set; }
 
         public List<string> alia;
 
@@ -1622,7 +1624,7 @@ namespace NeteaseCloudMusicApi
 
         public int downloadMaxbr;
 
-        public string maxBrLevel;
+        public string maxBrLevel { get; set; }
 
         public string playMaxBrLevel;
 
@@ -1646,7 +1648,7 @@ namespace NeteaseCloudMusicApi
 
         public List<SongsItem1> songs { get; set; }
 
-        public List<PrivilegesItem1> privileges;
+        public List<PrivilegesItem1> privileges { get; set; }
 
         public int code;
     }

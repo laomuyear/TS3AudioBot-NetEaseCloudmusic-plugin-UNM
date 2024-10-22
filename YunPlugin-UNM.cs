@@ -192,6 +192,32 @@ public class YunPlugin : IBotPlugin
 
     //===========================================单曲播放===========================================
 
+    //===========================================单曲id播放===========================================
+    [Command("yun id")]
+    public async Task CommandYunid(string arguments, PlayManager playManager, InvokerData invoker, Ts3Client ts3Client)
+    {
+        //playlist.Clear();
+        SetInvoker(invoker);
+        SetPlplayManager(playManager);
+        SetTs3Client(ts3Client);
+        string urlSearch = $"{WangYiYunAPI_Address}/song/detail?ids={arguments}";
+        string searchJson = await HttpGetAsync(urlSearch);
+        MusicDetail MusicDetail = JsonSerializer.Deserialize<MusicDetail>(searchJson);
+        string[] splitArguments = arguments.Split(" ");
+        Console.WriteLine(splitArguments.Length);
+        long songid = long.Parse(splitArguments[0]);
+        if (MusicDetail.privileges[0].maxBrLevel == null)
+        {
+            // 输入的歌曲id无效
+            Console.WriteLine("请输入有效的歌曲id");
+            _ = ts3Client.SendChannelMessage("请输入有效的歌曲id");
+        }
+        else if (MusicDetail.songs[0].id == songid)
+        {
+            _ = ProcessSong(MusicDetail.songs[0].id, ts3Client, playManager, invoker);
+        }
+    }
+    //===========================================单曲id播放===========================================
 
     //===========================================歌单播放===========================================
     [Command("yun gedan")]
@@ -209,10 +235,10 @@ public class YunPlugin : IBotPlugin
         int loopCount = -1;
         for (int i = 0; i < gedanDetail.playlist.trackCount; i += 50)
         {
-            Console.WriteLine($"查询循环次数{loopCount+1}");
+            Console.WriteLine($"查询循环次数{loopCount + 1}");
             loopCount += 1;
             if (i + 50 > gedanDetail.playlist.trackCount)
-            {   
+            {
                 // 如果歌单的歌曲数量小于50，那么查询的数量就是歌曲的数量，否则查询的数量就是歌曲的数量减去50乘以查询的次数
                 i = gedanDetail.playlist.trackCount < 50 ? gedanDetail.playlist.trackCount : gedanDetail.playlist.trackCount - 50 * loopCount;
                 // 构建查询URL，如果歌单的歌曲数量小于50，那么偏移量就是0，否则偏移量就是查询的数量
@@ -220,7 +246,8 @@ public class YunPlugin : IBotPlugin
                 urlSearch = $"{WangYiYunAPI_Address}/playlist/track/all?id={arguments}&limit=50&offset={offset}";
                 searchJson = await HttpGetAsync(urlSearch);
                 GeDan geDan1 = JsonSerializer.Deserialize<GeDan>(searchJson);
-                for (int j = 0; j < i; j++){
+                for (int j = 0; j < i; j++)
+                {
                     playlist.Add(geDan1.songs[j].id);
                     Console.WriteLine(geDan1.songs[j].id);
                 }
@@ -229,7 +256,8 @@ public class YunPlugin : IBotPlugin
             urlSearch = $"{WangYiYunAPI_Address}/playlist/track/all?id={arguments}&limit=50&offset={i}";
             searchJson = await HttpGetAsync(urlSearch);
             GeDan geDan = JsonSerializer.Deserialize<GeDan>(searchJson);
-            for (int j = 0; j < 50; j++){
+            for (int j = 0; j < 50; j++)
+            {
                 playlist.Add(geDan.songs[j].id);
                 Console.WriteLine(geDan.songs[j].id);
             }
@@ -318,9 +346,11 @@ public class YunPlugin : IBotPlugin
             MusicDetail musicDetail = JsonSerializer.Deserialize<MusicDetail>(musicDetailJson);
 
             // 从音乐详情中获取音乐图片URL和音乐名称
+            string musicAlbum = musicDetail.songs[0].al.name;
             string musicImgUrl = musicDetail.songs[0].al.picUrl;
             string musicName = musicDetail.songs[0].name;
-            Console.WriteLine($"歌曲id：{musicId}，歌曲名称：{musicName}，版权：{musicCheckJson.success}");
+            string musicSinger = musicDetail.songs[0].ar[0].name;
+            Console.WriteLine($"歌曲id：{musicId}，歌曲名称：{musicName}，歌手：{musicSinger}，专辑：{musicAlbum}，版权：{musicCheckJson.success}");
 
             // 设置Bot的头像为音乐图片
             _ = MainCommands.CommandBotAvatarSet(ts3Client, musicImgUrl);
@@ -342,11 +372,11 @@ public class YunPlugin : IBotPlugin
                 // 发送消息到频道，通知正在播放的音乐
                 if (playlist.Count == 0)
                 {
-                    _ = ts3Client.SendChannelMessage($"正在播放：{musicName}");
+                    _ = ts3Client.SendChannelMessage($"正在播放：{musicName} - {musicSinger}");
                 }
                 else
                 {
-                    _ = ts3Client.SendChannelMessage($"正在播放第{Playlocation+1}首：{musicName}");
+                    _ = ts3Client.SendChannelMessage($"正在播放第{Playlocation+1}首：{musicName} - {musicSinger}");
                 }
             }
         }
