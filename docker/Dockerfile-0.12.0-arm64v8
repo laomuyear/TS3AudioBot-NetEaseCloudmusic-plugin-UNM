@@ -1,24 +1,23 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-bionic-arm32v7
+#FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine-arm64v8
+#FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine-arm32v7
 
 # which version and flavour of the audiobot to use
-ARG TS3_AUDIOBOT_RELEASE="0.12.0"
-ARG TS3_AUDIOBOT_FLAVOUR="TS3AudioBot_dotnetcore3.1.zip"
+ARG TS3_AUDIOBOT_RELEASE="master"
 
-ADD sources.list /etc/apt
+#中国境内换源请去掉注释
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 # install all pre-requisites, these will be needed always
-RUN apt-get update && apt-get install -y \
-      openssl \
-      libopus-dev \
-      opus-tools \
-      ffmpeg \
-      zip
+RUN apk add \
+    opus-dev \
+    ffmpeg
 
 # download and install the TS3AudioBot in the specified version and flavour
 RUN mkdir -p /app \
     && cd /app \
-    && echo "downloading https://github.com/Splamy/TS3AudioBot/releases/download/${TS3_AUDIOBOT_RELEASE}/${TS3_AUDIOBOT_FLAVOUR}" \
-    && curl -L https://github.com/Splamy/TS3AudioBot/releases/download/${TS3_AUDIOBOT_RELEASE}/${TS3_AUDIOBOT_FLAVOUR} -o TS3AudioBot.zip \
+    && echo "downloading https://splamy.de/api/nightly/projects/ts3ab/${TS3_AUDIOBOT_RELEASE}/download -O TS3AudioBot.zip" \
+    && wget https://splamy.de/api/nightly/projects/ts3ab/${TS3_AUDIOBOT_RELEASE}/download -O TS3AudioBot.zip \
     && unzip TS3AudioBot.zip \
     && rm TS3AudioBot.zip
 
