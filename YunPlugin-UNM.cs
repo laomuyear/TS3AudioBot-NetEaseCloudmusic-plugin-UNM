@@ -331,7 +331,8 @@ public class YunPlugin : IBotPlugin
     private async Task ProcessSong(long id, Ts3Client ts3Client, PlayManager playManager, InvokerData invoker)
     {
         await playlock.WaitAsync();
-        try {
+        try
+        {
             long musicId = id;
             string musicCheckUrl = $"{WangYiYunAPI_Address}/check/music?id={musicId}";
             string searchMusicCheckJson = await HttpGetAsync(musicCheckUrl);
@@ -350,13 +351,14 @@ public class YunPlugin : IBotPlugin
             string musicImgUrl = musicDetail.songs[0].al.picUrl;
             string musicName = musicDetail.songs[0].name;
             string musicSinger = musicDetail.songs[0].ar[0].name;
+            string BotDescription = $"{musicName} - {musicSinger}";
             Console.WriteLine($"歌曲id：{musicId}，歌曲名称：{musicName}，歌手：{musicSinger}，专辑：{musicAlbum}，版权：{musicCheckJson.success}");
 
             // 设置Bot的头像为音乐图片
             _ = MainCommands.CommandBotAvatarSet(ts3Client, musicImgUrl);
 
             // 设置Bot的描述为音乐名称
-            _ = MainCommands.CommandBotDescriptionSet(ts3Client, musicName);
+            _ = MainCommands.CommandBotDescriptionSet(ts3Client, BotDescription);
 
             // 在控制台输出音乐播放URL
             Console.WriteLine(musicUrl);
@@ -367,7 +369,7 @@ public class YunPlugin : IBotPlugin
                 _ = MainCommands.CommandPlay(playManager, invoker, musicUrl);
 
                 // 更新Bot的描述为当前播放的音乐名称
-                _ = MainCommands.CommandBotDescriptionSet(ts3Client, musicName);
+                _ = MainCommands.CommandBotDescriptionSet(ts3Client, BotDescription);
 
                 // 发送消息到频道，通知正在播放的音乐
                 if (playlist.Count == 0)
