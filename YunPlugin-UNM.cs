@@ -54,7 +54,7 @@ public class YunPlugin : IBotPlugin
             }
 
             string location = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            iniFilePath = File.Exists(dockerEnvFilePath) ? location + "/data/plugins/YunSettings.ini" : location + "/plugins/YunSettings.ini";
+            iniFilePath = File.Exists(dockerEnvFilePath) ? location + "/data/plugins/YunSettings.ini" : location + "./plugins/YunSettings.ini";
         }
         else
         {
@@ -115,7 +115,6 @@ public class YunPlugin : IBotPlugin
     
     //===========================================初始化===========================================
 
-
     //===========================================播放模式===========================================
     [Command("yun mode")]
     public string Playmode(int mode)
@@ -141,6 +140,63 @@ public class YunPlugin : IBotPlugin
     }
     //===========================================播放模式===========================================
 
+    //=============================================搜索=============================================
+    [Command("yun s")]
+    public async Task CommandYunS(string arguments, PlayManager playManager, InvokerData invoker, Ts3Client ts3Client)
+    {
+        SetInvoker(invoker);
+        SetTs3Client(ts3Client);
+        string urlSearch = $"{WangYiYunAPI_Address}/search?keywords={arguments}&limit=30";
+        string searchJson = await HttpGetAsync(urlSearch);
+        yunSearchSong yunSearchSong = JsonSerializer.Deserialize<yunSearchSong>(searchJson);
+        string[] splitArguments = arguments.Split("#");
+        Console.WriteLine(splitArguments.Length);
+        if (splitArguments.Length == 1)
+        {
+            if (yunSearchSong.result.songCount >= 6)
+            {
+                _ = ts3Client.SendChannelMessage($"搜索结果：\n#0：\n歌曲名称：{yunSearchSong.result.songs[0].name}\n歌手：{yunSearchSong.result.songs[0].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[0].id}\n\n#1：\n歌曲名称：{yunSearchSong.result.songs[1].name}\n歌手：{yunSearchSong.result.songs[1].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[1].id}\n\n#2：\n歌曲名称：{yunSearchSong.result.songs[2].name}\n歌手：{yunSearchSong.result.songs[2].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[2].id}\n\n#3：\n歌曲名称：{yunSearchSong.result.songs[3].name}\n歌手：{yunSearchSong.result.songs[3].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[3].id}\n\n#4：\n歌曲名称：{yunSearchSong.result.songs[4].name}\n歌手：{yunSearchSong.result.songs[4].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[4].id}\n\n#5：\n歌曲名称：{yunSearchSong.result.songs[5].name}\n歌手：{yunSearchSong.result.songs[5].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[5].id}");
+            }
+            else if (yunSearchSong.result.songCount == 1)
+            {
+                _ = ts3Client.SendChannelMessage($"搜索结果：\n#0：\n歌曲名称：{yunSearchSong.result.songs[0].name}\n歌手：{yunSearchSong.result.songs[0].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[0].id}");
+            }
+            else if (yunSearchSong.result.songCount == 2)
+            {
+                _ = ts3Client.SendChannelMessage($"搜索结果：\n#0：\n歌曲名称：{yunSearchSong.result.songs[0].name}\n歌手：{yunSearchSong.result.songs[0].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[0].id}\n\n#1：\n歌曲名称：{yunSearchSong.result.songs[1].name}\n歌手：{yunSearchSong.result.songs[1].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[1].id}");
+            }
+            else if (yunSearchSong.result.songCount >= 3 && yunSearchSong.result.songCount < 6 )
+            {
+                _ = ts3Client.SendChannelMessage($"搜索结果：\n#0：\n歌曲名称：{yunSearchSong.result.songs[0].name}\n歌手：{yunSearchSong.result.songs[0].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[0].id}\n\n#1：\n歌曲名称：{yunSearchSong.result.songs[1].name}\n歌手：{yunSearchSong.result.songs[1].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[1].id}\n\n#2：\n歌曲名称：{yunSearchSong.result.songs[2].name}\n歌手：{yunSearchSong.result.songs[2].artists[0].name}\n歌曲id：{yunSearchSong.result.songs[2].id}");
+            }
+            else
+            {
+                _ = ts3Client.SendChannelMessage("未找到结果");
+            }
+        }
+        else if (splitArguments.Length == 2)
+        {
+            int s = int.Parse(splitArguments[1]);
+            if (s >= 0 && s <= 5)
+            {
+                _ = ProcessSong(yunSearchSong.result.songs[s].id, ts3Client, playManager, invoker);
+            }
+            else
+            {
+                // 输入为空或格式不符合预期
+                Console.WriteLine("请输入有效的歌曲序号");
+                _ = ts3Client.SendChannelMessage("请输入有效的歌曲序号");
+            }
+        }
+        else
+        {
+            // 输入为空或格式不符合预期
+            Console.WriteLine("请输入有效的歌曲信息");
+            _ = ts3Client.SendChannelMessage("请输入有效的歌曲信息");
+        }
+    }
+    //=============================================搜索=============================================
+
 
     //===========================================单曲播放===========================================
     [Command("yun play")]
@@ -154,7 +210,7 @@ public class YunPlugin : IBotPlugin
         string urlSearch = $"{WangYiYunAPI_Address}/search?keywords={arguments}&limit=30";
         string searchJson = await HttpGetAsync(urlSearch);
         yunSearchSong yunSearchSong = JsonSerializer.Deserialize<yunSearchSong>(searchJson);
-        string[] splitArguments = arguments.Split(" ");
+        string[] splitArguments = arguments.Split(" - ");
         Console.WriteLine(splitArguments.Length);
         if (splitArguments.Length == 1)
         {
@@ -192,7 +248,7 @@ public class YunPlugin : IBotPlugin
 
     //===========================================单曲播放===========================================
 
-    //===========================================单曲id播放===========================================
+    //==========================================单曲id播放==========================================
     [Command("yun id")]
     public async Task CommandYunid(string arguments, PlayManager playManager, InvokerData invoker, Ts3Client ts3Client)
     {
@@ -216,8 +272,13 @@ public class YunPlugin : IBotPlugin
         {
             _ = ProcessSong(MusicDetail.songs[0].id, ts3Client, playManager, invoker);
         }
+        else
+        {
+            Console.WriteLine("错误");
+            _ = ts3Client.SendChannelMessage("错误");
+        }
     }
-    //===========================================单曲id播放===========================================
+    //==========================================单曲id播放==========================================
 
     //===========================================歌单播放===========================================
     [Command("yun gedan")]
@@ -271,7 +332,7 @@ public class YunPlugin : IBotPlugin
     }
     //===========================================歌单播放===========================================
 
-    //===========================================下一曲===========================================
+    //============================================下一曲============================================
     [Command("yun next")]
     public async Task CommandYunNext(PlayManager playManager, InvokerData invoker, Ts3Client ts3Client)
     {
@@ -487,7 +548,7 @@ public class YunPlugin : IBotPlugin
     //===============================================登录部分===============================================
 
 
-    //===============================================获取歌曲信息===============================================
+    //=============================================获取歌曲信息=============================================
     //以下全是功能性函数
     public static async Task<string> GetMusicUrl(long id, bool usingCookie = false)
     {
@@ -534,7 +595,7 @@ public class YunPlugin : IBotPlugin
         string musicname = musicDetail.songs[0].name;
         return musicname;
     }
-    //===============================================获取歌曲信息===============================================
+    //=============================================获取歌曲信息=============================================
 
 
 

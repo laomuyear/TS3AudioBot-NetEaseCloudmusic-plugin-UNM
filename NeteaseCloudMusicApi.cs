@@ -110,7 +110,7 @@ namespace NeteaseCloudMusicApi
 
         public bool hasMore;
 
-        public long songCount;
+        public long songCount { get; set; }
     }
 
     public class yunSearchSong
