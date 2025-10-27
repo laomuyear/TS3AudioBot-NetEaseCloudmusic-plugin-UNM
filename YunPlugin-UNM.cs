@@ -259,9 +259,7 @@ public class YunPlugin : IBotPlugin
         string urlSearch = $"{WangYiYunAPI_Address}/song/detail?ids={arguments}";
         string searchJson = await HttpGetAsync(urlSearch);
         MusicDetail MusicDetail = JsonSerializer.Deserialize<MusicDetail>(searchJson);
-        string[] splitArguments = arguments.Split(" ");
-        Console.WriteLine(splitArguments.Length);
-        long songid = long.Parse(splitArguments[0]);
+        long songid = long.Parse(arguments);
         if (MusicDetail.privileges[0].maxBrLevel == null)
         {
             // 输入的歌曲id无效
@@ -349,23 +347,26 @@ public class YunPlugin : IBotPlugin
     [Command("yun to")]
     public async Task CommandYunTo(string arguments, PlayManager playManager, InvokerData invoker, Ts3Client ts3Client)
     {
-        string[] splitArguments = arguments.Split(" ");
-        Console.WriteLine(splitArguments.Length);
-        int songto = int.Parse(splitArguments[0]);
+        int songto = int.Parse(arguments);
         if (songto <= 0)
         {
             Console.WriteLine("请输入有效的歌曲顺序");
-            _ = ts3Client.SendChannelMessage("请输入有效的歌曲顺序");
+            _ = ts3Client.SendChannelMessage("<=0是想怎滴");
         }
-        else if (songto == playlist.Count + 1)
+        else if (songto > playlist.Count)
         {
-            Console.WriteLine("请输入有效的歌曲顺序");
-            _ = ts3Client.SendChannelMessage("请输入有效的歌曲顺序");
+            Console.WriteLine("输入超过列表总数");
+            _ = ts3Client.SendChannelMessage($"播放列表里只有{playlist.Count}首歌啦");
         }
-        else
+        else if (songto <= playlist.Count)
         {
             Playlocation = songto - 1;
             await ProcessSong(playlist[Playlocation], ts3Client, playManager, invoker);
+        }
+        else
+        {
+            Console.WriteLine("请输入有效的歌曲顺序");
+            _ = ts3Client.SendChannelMessage("请输入有效的歌曲顺序");
         }
     }
     //===========================================歌单jump=============================================
