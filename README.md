@@ -21,30 +21,31 @@ TS3AudioBot-NetEaseCloudmusic-UnblockNeteaseMusic-plugin
 
 双击机器人或在机器人所在频道内发送消息，目前有以下主要指令
 
-- 播放网易云音乐歌曲  
-`!yun play 音乐名称`
-`!yun play 音乐名称 - 歌手`  
+- 播放网易云音乐歌曲
+  `!yun play 音乐名称`
+  `!yun play 音乐名称 - 歌手`  
 
-- 播放网易云音乐歌单    
-`!yun gedan 歌单id`
+- 播放网易云音乐歌单
+  `!yun gedan 歌单id`
 
-- 播放网易云音乐歌曲id    
-`!yun id 歌曲id` 
+- 播放网易云音乐歌曲id
+  `!yun id 歌曲id` 
 
 - 播放列表中的下一首
-`!yun next`
+  `!yun next`
+
 - 播放歌单时跳到指定位置
-`!yun to 数字(歌单歌曲顺序数)`
+  `!yun to 数字(歌单歌曲顺序数)`
 
-- 停止播放(播放歌单时为清空播放列表)   
-`!yun stop` 
+- 停止播放(播放歌单时为清空播放列表)
+  `!yun stop` 
 
-- 修改播放模式    
-`!yun mode 数字0-3`    
-`0 = 顺序播放`    
-`1 = 顺序循环`    
-`2 = 随机播放`    
-`3 = 随机循环`    
+- 修改播放模式
+  `!yun mode 数字0-3`
+  `0 = 顺序播放`
+  `1 = 顺序循环`
+  `2 = 随机播放`
+  `3 = 随机循环`    
 
 
 ## 如果你需要基于主线[TS3AudioBot](https://github.com/Splamy/TS3AudioBot)构建Docker版的TS3AudioBot：   
