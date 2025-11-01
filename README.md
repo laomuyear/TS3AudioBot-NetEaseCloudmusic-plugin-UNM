@@ -22,7 +22,7 @@ TS3AudioBot-NetEaseCloudmusic-UnblockNeteaseMusic-plugin
 双击机器人或在机器人所在频道内发送消息，目前有以下主要指令
 
 - 播放网易云音乐歌曲   
-  `!yun play 音乐名称`
+  `!yun play 音乐名称`   
   `!yun play 音乐名称 - 歌手`  
 
 - 播放网易云音乐歌单   
@@ -41,10 +41,10 @@ TS3AudioBot-NetEaseCloudmusic-UnblockNeteaseMusic-plugin
   `!yun stop` 
 
 - 修改播放模式   
-  `!yun mode 数字0-3`
-  `0 = 顺序播放`
-  `1 = 顺序循环`
-  `2 = 随机播放`
+  `!yun mode 数字0-3`   
+  `0 = 顺序播放`   
+  `1 = 顺序循环`   
+  `2 = 随机播放`   
   `3 = 随机循环`    
 
 
