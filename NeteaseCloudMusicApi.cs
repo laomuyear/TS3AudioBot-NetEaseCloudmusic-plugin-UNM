@@ -1481,7 +1481,7 @@ namespace NeteaseCloudMusicApi
 
         public List<PrivilegesItem1> PrivilegesItem1 { get; set; }
 
-        public List<string> alia;
+        public List<string> alia { get; set; }
 
         public int pop;
 
