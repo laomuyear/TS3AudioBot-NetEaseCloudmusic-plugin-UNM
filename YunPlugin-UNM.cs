@@ -460,23 +460,26 @@ public class YunPlugin : IBotPlugin
     {
         try
         {
+            if (playlist.Count == 0)
+            {
+                Console.WriteLine("播放列表为空");
+                return;
+            }
+
             switch (playMode)
             {
                 case 0: //顺序播放
                     Playlocation += 1;
+                    if (Playlocation >= playlist.Count)
+                    {
+                        Console.WriteLine("顺序播放已到末尾");
+                        return;
+                    }
                     await ProcessSong(playlist[Playlocation], ts3Client, playManager, invoker);
                     break;
                 case 1:  //顺序循环
-                    if (Playlocation == playlist.Count - 1)
-                    {
-                        Playlocation = 0;
-                        await ProcessSong(playlist[Playlocation], ts3Client, playManager, invoker);
-                    }
-                    else
-                    {
-                        Playlocation += 1;
-                        await ProcessSong(playlist[Playlocation], ts3Client, playManager, invoker);
-                    }
+                    Playlocation = (Playlocation + 1) % playlist.Count;
+                    await ProcessSong(playlist[Playlocation], ts3Client, playManager, invoker);
                     break;
                 case 2:  //随机播放
                     Random random = new Random();
@@ -490,12 +493,12 @@ public class YunPlugin : IBotPlugin
                     break;
                 default:
                     break;
-            } 
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Console.WriteLine("播放列表已空");
-            _ = ts3Client.SendChannelMessage("已停止播放");
+            Console.WriteLine($"播放出错: {ex.Message}");
+            _ = ts3Client.SendChannelMessage("播放出错");
         }
     }
     private async Task ProcessSong(long id, Ts3Client ts3Client, PlayManager playManager, InvokerData invoker)
@@ -551,10 +554,20 @@ public class YunPlugin : IBotPlugin
                 }
 
                 // 如果有描述信息，发送描述
-                if (musicDetail.songs[0].alia[0] != null)
+                string additionalInfo = "描述：";
+                if (musicDetail?.songs?[0]?.tns?.Count > 0 && !string.IsNullOrEmpty(musicDetail.songs[0].tns[0]))
                 {
-                    string musicAlia = musicDetail.songs[0].alia[0];
-                    _ = ts3Client.SendChannelMessage($"描述：{musicAlia}");
+                    additionalInfo += $"{musicDetail.songs[0].tns[0]}";
+                }
+                if (musicDetail?.songs?[0]?.alia?.Count > 0 && !string.IsNullOrEmpty(musicDetail.songs[0].alia[0]))
+                {
+                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += " | ";
+                    additionalInfo += $"{musicDetail.songs[0].alia[0]}";
+                }
+
+                if (!string.IsNullOrEmpty(additionalInfo))
+                {
+                    _ = ts3Client.SendChannelMessage(additionalInfo);
                 }
             }
         }

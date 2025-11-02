@@ -1509,6 +1509,8 @@ namespace NeteaseCloudMusicApi
 
         public Sq1 sq;
 
+        public List<string> tns { get; set; }
+
 
         public string hr;
 
