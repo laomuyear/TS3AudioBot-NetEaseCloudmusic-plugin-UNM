@@ -561,15 +561,15 @@ public class YunPlugin : IBotPlugin
                 }
                 if (musicDetail?.songs?[0]?.alia?.Count > 0 && !string.IsNullOrEmpty(musicDetail.songs[0].alia[0]))
                 {
-                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += "（";
+                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += " - ";
                     additionalInfo += $"{musicDetail.songs[0].alia[0]}";
-                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += "）";
                 }
 
                 if (!string.IsNullOrEmpty(additionalInfo))
                 {
                     additionalInfo = "描述：" + additionalInfo;
                     _ = ts3Client.SendChannelMessage(additionalInfo);
+
                 }
             }
         }
