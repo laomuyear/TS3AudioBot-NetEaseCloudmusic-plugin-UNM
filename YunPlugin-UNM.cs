@@ -554,19 +554,21 @@ public class YunPlugin : IBotPlugin
                 }
 
                 // 如果有描述信息，发送描述
-                string additionalInfo = "描述：";
+                string additionalInfo = "";
                 if (musicDetail?.songs?[0]?.tns?.Count > 0 && !string.IsNullOrEmpty(musicDetail.songs[0].tns[0]))
                 {
                     additionalInfo += $"{musicDetail.songs[0].tns[0]}";
                 }
                 if (musicDetail?.songs?[0]?.alia?.Count > 0 && !string.IsNullOrEmpty(musicDetail.songs[0].alia[0]))
                 {
-                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += " | ";
+                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += "（";
                     additionalInfo += $"{musicDetail.songs[0].alia[0]}";
+                    if (!string.IsNullOrEmpty(additionalInfo)) additionalInfo += "）";
                 }
 
                 if (!string.IsNullOrEmpty(additionalInfo))
                 {
+                    additionalInfo = "描述：" + additionalInfo;
                     _ = ts3Client.SendChannelMessage(additionalInfo);
                 }
             }
