@@ -569,7 +569,6 @@ public class YunPlugin : IBotPlugin
                 {
                     additionalInfo = "描述：" + additionalInfo;
                     _ = ts3Client.SendChannelMessage(additionalInfo);
-
                 }
             }
         }
