@@ -15,6 +15,8 @@ using TS3AudioBot.CommandSystem;
 using TS3AudioBot.Plugins;
 using TSLib.Full;
 using NeteaseCloudMusicApi;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 public class YunPlugin : IBotPlugin 
 {
@@ -148,27 +150,62 @@ public class YunPlugin : IBotPlugin
         SetTs3Client(ts3Client);
 
         string[] splitArguments = arguments.Split("#");
-        Console.WriteLine(splitArguments.Length);
+        Console.WriteLine($"参数长度: {splitArguments.Length}");
 
-        // 处理搜索请求
+        // 处理搜索请求（单个参数：搜索关键词）
         if (splitArguments.Length == 1)
         {
-            await HandleSearchRequest(splitArguments[0], ts3Client);
+            await HandleSearchRequest(splitArguments[0], ts3Client, 1); // 默认第一页
         }
-        // 处理歌曲选择
+        // 处理搜索请求带页码（搜索关键词#页码）
         else if (splitArguments.Length == 2)
         {
-            await HandleSongSelection(splitArguments[0], splitArguments[1], ts3Client, playManager, invoker);
+            if (int.TryParse(splitArguments[1], out int page))
+            {
+                await HandleSearchRequest(splitArguments[0], ts3Client, page);
+            }
+            else
+            {
+                await SendErrorMessage(ts3Client, "请输入有效的页码数字");
+            }
+        }
+        // 处理歌曲选择（搜索关键词#页码#歌曲序号）
+        else if (splitArguments.Length == 3)
+        {
+            if (!int.TryParse(splitArguments[1], out int page))
+            {
+                await SendErrorMessage(ts3Client, "请输入有效的页码数字");
+                return;
+            }
+
+            if (!int.TryParse(splitArguments[2], out int songIndex))
+            {
+                await SendErrorMessage(ts3Client, "请输入有效的歌曲序号");
+                return;
+            }
+
+            await HandleSongSelection(splitArguments[0], page, songIndex, ts3Client, playManager, invoker);
         }
         else
         {
-            await SendErrorMessage(ts3Client, "请输入有效的歌曲信息");
+            await SendErrorMessage(ts3Client, "格式错误。使用: !yun s 关键词 或 !yun s 关键词#页码 或 !yun s 关键词#页码#歌曲序号");
         }
     }
 
-    private async Task HandleSearchRequest(string searchTerm, Ts3Client ts3Client)
+    private async Task HandleSearchRequest(string searchTerm, Ts3Client ts3Client, int page)
     {
-        string urlSearch = $"{WangYiYunAPI_Address}/search?keywords={searchTerm}&limit=30";
+        if (page < 1)
+        {
+            await SendErrorMessage(ts3Client, "页码必须大于0");
+            return;
+        }
+
+        const int pageSize = 6; // 每页显示6首歌曲
+        int offset = (page - 1) * pageSize;
+
+        string urlSearch = $"{WangYiYunAPI_Address}/search?keywords={searchTerm}&limit={pageSize}&offset={offset}";
+        Console.WriteLine($"搜索URL: {urlSearch}");
+
         string searchJson = await HttpGetAsync(urlSearch);
         yunSearchSong yunSearchSong = JsonSerializer.Deserialize<yunSearchSong>(searchJson);
 
@@ -179,24 +216,29 @@ public class YunPlugin : IBotPlugin
             return;
         }
 
-        string message = BuildSearchResultMessage(yunSearchSong);
+        string message = BuildSearchResultMessage(yunSearchSong, page, searchTerm);
         await ts3Client.SendChannelMessage(message);
     }
 
-    private async Task HandleSongSelection(string searchTerm, string selection, Ts3Client ts3Client, PlayManager playManager, InvokerData invoker)
+    private async Task HandleSongSelection(string searchTerm, int page, int songIndex, Ts3Client ts3Client, PlayManager playManager, InvokerData invoker)
     {
-        if (!int.TryParse(selection, out int songIndex) || songIndex < 1 || songIndex > 6)
+        if (songIndex < 1 || songIndex > 6)
         {
             await SendErrorMessage(ts3Client, "请输入有效的歌曲序号 (1-6)");
             return;
         }
 
-        string urlSearch = $"{WangYiYunAPI_Address}/search?keywords={searchTerm}&limit=30";
+        const int pageSize = 6; // 每页显示6首歌曲
+        int offset = (page - 1) * pageSize;
+
+        string urlSearch = $"{WangYiYunAPI_Address}/search?keywords={searchTerm}&limit={pageSize}&offset={offset}";
+        Console.WriteLine($"搜索URL: {urlSearch}");
+
         string searchJson = await HttpGetAsync(urlSearch);
         yunSearchSong yunSearchSong = JsonSerializer.Deserialize<yunSearchSong>(searchJson);
 
         // 检查API响应结果
-        if (yunSearchSong?.result?.songs == null)
+        if (yunSearchSong?.result?.songs == null || yunSearchSong.result.songs.Count == 0)
         {
             await SendErrorMessage(ts3Client, "搜索失败或未找到结果");
             return;
@@ -212,33 +254,46 @@ public class YunPlugin : IBotPlugin
         await ProcessSong(yunSearchSong.result.songs[actualIndex].id, ts3Client, playManager, invoker);
     }
 
-    private string BuildSearchResultMessage(yunSearchSong searchResult)
+    private string BuildSearchResultMessage(yunSearchSong searchResult, int currentPage, string searchTerm)
     {
         var result = searchResult.result;
-        var displayCount = Math.Min((int)result.songCount, 6);
-        var messageBuilder = new StringBuilder("搜索结果：\n");
+        var displayCount = result.songs.Count;
+        var totalSongs = (int)result.songCount;
+
+        const int pageSize = 6;
+        int totalPages = (int)Math.Ceiling((double)totalSongs / pageSize);
+        int startNumber = (currentPage - 1) * pageSize + 1;
+
+        var messageBuilder = new StringBuilder($"搜索结果（第{currentPage}/{totalPages}页）:\n\n");
 
         for (int i = 0; i < displayCount; i++)
         {
             var song = result.songs[i];
-            string artistName = artistName = song.artists[0].name;
+            string artistName = song.artists.Count > 0 ? song.artists[0].name : "未知歌手";
 
-            messageBuilder.AppendLine($"#{i + 1}：");
+            messageBuilder.AppendLine($"#{startNumber + i}：");
             messageBuilder.AppendLine($"歌曲名称：{song.name}");
             messageBuilder.AppendLine($"歌手：{artistName}");
-            // messageBuilder.AppendLine($"歌曲id：{song.id}");
 
             if (i < displayCount - 1)
                 messageBuilder.AppendLine();
         }
+
+        // 添加页码信息 - 修复：使用传入的searchTerm变量
+        messageBuilder.AppendLine($"\n使用 !yun s {searchTerm} #{currentPage + 1} 查看下一页");
+        if (currentPage > 1)
+        {
+            messageBuilder.AppendLine($"使用 !yun s {searchTerm} #{currentPage - 1} 查看上一页");
+        }
+        messageBuilder.AppendLine($"使用 !yun s {searchTerm} #{currentPage} #歌曲序号 选择歌曲");
 
         return messageBuilder.ToString();
     }
 
     private async Task SendErrorMessage(Ts3Client ts3Client, string message)
     {
-        Console.WriteLine(message);
-        await ts3Client.SendChannelMessage(message);
+        Console.WriteLine($"错误: {message}");
+        await ts3Client.SendChannelMessage($"错误: {message}");
     }
     //=============================================搜索=============================================
 
@@ -297,29 +352,154 @@ public class YunPlugin : IBotPlugin
     [Command("yun id")]
     public async Task CommandYunid(string arguments, PlayManager playManager, InvokerData invoker, Ts3Client ts3Client)
     {
-        //playlist.Clear();
         SetInvoker(invoker);
         SetPlplayManager(playManager);
         SetTs3Client(ts3Client);
-        string urlSearch = $"{WangYiYunAPI_Address}/song/detail?ids={arguments}";
-        string searchJson = await HttpGetAsync(urlSearch);
-        MusicDetail MusicDetail = JsonSerializer.Deserialize<MusicDetail>(searchJson);
-        long songid = long.Parse(arguments);
-        if (MusicDetail.privileges[0].maxBrLevel == null)
+
+        // 提取歌曲ID（支持直接输入ID或包含ID的URL）
+        string songId = ExtractSongIdFromInput(arguments);
+
+        if (string.IsNullOrEmpty(songId))
         {
-            // 输入的歌曲id无效
-            Console.WriteLine("请输入有效的歌曲id");
-            _ = ts3Client.SendChannelMessage("请输入有效的歌曲id");
+            Console.WriteLine("未找到有效的歌曲ID");
+            await ts3Client.SendChannelMessage("请输入有效的歌曲ID或网易云音乐链接");
+            return;
         }
-        else if (MusicDetail.songs[0].id == songid)
+
+        Console.WriteLine($"提取的歌曲ID: {songId}");
+
+        try
         {
-            _ = ProcessSong(MusicDetail.songs[0].id, ts3Client, playManager, invoker);
+            string urlSearch = $"{WangYiYunAPI_Address}/song/detail?ids={songId}";
+            string searchJson = await HttpGetAsync(urlSearch);
+
+            if (string.IsNullOrEmpty(searchJson))
+            {
+                Console.WriteLine("API请求失败");
+                await ts3Client.SendChannelMessage("获取歌曲信息失败，请检查网络连接");
+                return;
+            }
+
+            MusicDetail musicDetail = JsonSerializer.Deserialize<MusicDetail>(searchJson);
+
+            if (musicDetail == null || musicDetail.songs == null || musicDetail.songs.Count == 0)
+            {
+                Console.WriteLine("歌曲信息解析失败");
+                await ts3Client.SendChannelMessage("歌曲信息解析失败");
+                return;
+            }
+
+            long parsedSongId;
+            if (!long.TryParse(songId, out parsedSongId))
+            {
+                Console.WriteLine("歌曲ID格式错误");
+                await ts3Client.SendChannelMessage("歌曲ID格式错误");
+                return;
+            }
+
+            // 检查歌曲是否存在
+            if (musicDetail.songs[0].id != parsedSongId)
+            {
+                Console.WriteLine("歌曲ID不匹配");
+                await ts3Client.SendChannelMessage("歌曲ID不匹配，可能输入了无效的ID");
+                return;
+            }
+
+            // 检查歌曲是否有播放权限（maxBrLevel不为null通常表示有版权）
+            if (musicDetail.privileges != null && musicDetail.privileges.Count > 0 &&
+                musicDetail.privileges[0].maxBrLevel == null)
+            {
+                Console.WriteLine("歌曲无版权或不可播放");
+                await ts3Client.SendChannelMessage("该歌曲无版权或不可播放");
+                return;
+            }
+
+            // 获取歌曲名称和歌手信息用于日志
+            string songName = musicDetail.songs[0].name ?? "未知歌曲";
+            string artistName = musicDetail.songs[0].ar != null && musicDetail.songs[0].ar.Count > 0
+                ? musicDetail.songs[0].ar[0].name
+                : "未知歌手";
+
+            Console.WriteLine($"提取的歌曲ID: {parsedSongId}");
+            await ts3Client.SendChannelMessage($"提取的歌曲ID: {parsedSongId}");
+
+            // 播放歌曲
+            await ProcessSong(parsedSongId, ts3Client, playManager, invoker);
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("错误");
-            _ = ts3Client.SendChannelMessage("错误");
+            Console.WriteLine($"播放歌曲时出错: {ex.Message}");
+            await ts3Client.SendChannelMessage($"播放失败: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 从用户输入中提取歌曲ID
+    /// 支持以下格式：
+    /// 1. 纯数字ID：xxxxxxxxx
+    /// 2. 完整URL：https://music.163.com/song?id=xxxxxxxxx&userid=xxxxxxxxx
+    /// 3. 简化URL：music.163.com/song?id=xxxxxxxxx
+    /// 4. 带#的URL：music.163.com/#/song?id=xxxxxxxxx
+    /// </summary>
+    private string ExtractSongIdFromInput(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return null;
+
+        // 如果输入是纯数字，直接返回
+        if (long.TryParse(input, out _))
+        {
+            return input.Trim();
+        }
+
+        // 处理URL格式
+        try
+        {
+            Uri uri;
+            // 如果输入没有协议头，添加https://
+            if (!input.StartsWith("http://") && !input.StartsWith("https://"))
+            {
+                input = "https://" + input;
+            }
+
+            if (Uri.TryCreate(input, UriKind.Absolute, out uri))
+            {
+                // 解析查询参数
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                string id = query["id"];
+
+                if (!string.IsNullOrEmpty(id))
+                {
+                    // 验证ID是否为数字
+                    if (long.TryParse(id, out _))
+                    {
+                        return id;
+                    }
+                }
+
+                // 如果没有找到id参数，尝试从路径中提取
+                // 例如：music.163.com/song/xxxxxxxxx
+                string[] segments = uri.Segments;
+                for (int i = 0; i < segments.Length; i++)
+                {
+                    if (segments[i].Equals("song/", StringComparison.OrdinalIgnoreCase) &&
+                        i + 1 < segments.Length)
+                    {
+                        string potentialId = segments[i + 1].Trim('/');
+                        if (long.TryParse(potentialId, out _))
+                        {
+                            return potentialId;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"提取歌曲ID时出错: {ex.Message}");
+        }
+
+        return null;
     }
     //==========================================单曲id播放==========================================
 
